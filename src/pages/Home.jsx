@@ -1,3 +1,4 @@
+import "./Home.css";
 import cities from "../data/cities.json";
 import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
