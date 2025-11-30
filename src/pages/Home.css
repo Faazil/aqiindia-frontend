@@ -1,0 +1,23 @@
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 20px;
+}
+
+.city-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f3f3f3;
+  text-align: center;
+  text-transform: capitalize;
+  font-weight: 600;
+  text-decoration: none;
+  color: #222;
+  transition: 0.2s;
+}
+
+.city-card:hover {
+  background: #ddd;
+  transform: scale(1.03);
+}
