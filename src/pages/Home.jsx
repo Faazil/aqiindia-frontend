@@ -1,3 +1,5 @@
+import cities from "../data/cities.json";
+import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AQIMap from "../components/AQIMap";
@@ -37,6 +39,14 @@ export default function Home(){
   },[]);
 
   return (
+    <div className="city-grid">
+     {cities.map((c) => (
+      <Link key={c} to={`/city/${c}`} className="city-card">
+        {c.replace("-", " ")}
+      </Link>
+     ))}
+    </div>
+
     <div className="container">
       <header style={{marginBottom:16}}>
         <h1>AQI India — Live</h1>
