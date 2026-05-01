@@ -42,12 +42,18 @@ export default function Home() {
 
   const suggestionList = useMemo(() => {
     const query = searchText.trim().toLowerCase();
-    if (!query || query.length === 0) return [];
+    if (!query || query.length < 2) return [];
 
-    return cities
-      .filter((city) => city.toLowerCase().includes(query) || formatCityName(city).toLowerCase().includes(query))
+    const filtered = cities
+      .filter((city) => {
+        const cityLower = city.toLowerCase();
+        const labelLower = formatCityName(city).toLowerCase();
+        return cityLower.includes(query) || labelLower.includes(query);
+      })
       .map((city) => ({ slug: city, label: formatCityName(city) }))
-      .slice(0, 6);
+      .slice(0, 8);
+
+    return filtered;
   }, [searchText]);
 
   const selectedCitySlug = useMemo(() => {
