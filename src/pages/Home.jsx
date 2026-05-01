@@ -58,6 +58,14 @@ export default function Home() {
   const canSearch = Boolean(selectedCitySlug);
 
   useEffect(() => {
+    if (searchText.trim() && suggestionList.length > 0) {
+      setSuggestionsOpen(true);
+    } else {
+      setSuggestionsOpen(false);
+    }
+  }, [searchText, suggestionList]);
+
+  useEffect(() => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "";
     axios
       .get(`${apiBase}/api/top-cities`)
@@ -143,8 +151,6 @@ export default function Home() {
               if (canSearch) {
                 navigate(`/city/${selectedCitySlug}`);
                 setSuggestionsOpen(false);
-              } else {
-                setSuggestionsOpen(true);
               }
             }}
           >
@@ -155,7 +161,6 @@ export default function Home() {
                 placeholder="Search any city (e.g. Surat)"
                 onChange={(event) => {
                   setSearchText(event.target.value);
-                  setSuggestionsOpen(true);
                 }}
                 onFocus={() => setSuggestionsOpen(true)}
                 onBlur={() => setTimeout(() => setSuggestionsOpen(false), 120)}
