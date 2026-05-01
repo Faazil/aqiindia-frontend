@@ -42,20 +42,21 @@ export default function Home() {
 
   const suggestionList = useMemo(() => {
     const query = searchText.trim().toLowerCase();
-    if (!query) return [];
+    if (!query || query.length === 0) return [];
 
     return cities
+      .filter((city) => city.toLowerCase().includes(query) || formatCityName(city).toLowerCase().includes(query))
       .map((city) => ({ slug: city, label: formatCityName(city) }))
-      .filter((item) => item.label.toLowerCase().includes(query))
       .slice(0, 6);
   }, [searchText]);
 
-  const exactMatchSlug = useMemo(() => {
-    const normalized = searchText.trim().toLowerCase().replace(/\s+/g, "-");
-    return cities.includes(normalized) ? normalized : null;
-  }, [searchText]);
+  const selectedCitySlug = useMemo(() => {
+    if (!searchText.trim()) return null;
+    const query = searchText.trim().toLowerCase().replace(/\s+/g, "-");
+    if (cities.includes(query)) return query;
+    return suggestionList[0]?.slug || null;
+  }, [searchText, suggestionList]);
 
-  const selectedCitySlug = exactMatchSlug || suggestionList[0]?.slug || null;
   const canSearch = Boolean(selectedCitySlug && searchText.trim());
 
   useEffect(() => {
@@ -162,15 +163,16 @@ export default function Home() {
                 placeholder="Search any city (e.g. Surat)"
                 onChange={(event) => {
                   setSearchText(event.target.value);
+                  setSuggestionsOpen(true);
                 }}
-                onFocus={() => setSuggestionsOpen(true)}
+                onFocus={() => setSuggestionsOpen(Boolean(searchText.trim()))}
                 onBlur={() => setTimeout(() => setSuggestionsOpen(false), 120)}
               />
               <button type="submit" disabled={!canSearch}>
                 Search
               </button>
             </div>
-            {suggestionsOpen && (
+            {suggestionsOpen && searchText.trim() && (
               <div className="autocomplete">
                 {suggestionList.length > 0 ? (
                   suggestionList.map((item) => (
@@ -188,7 +190,7 @@ export default function Home() {
                     </button>
                   ))
                 ) : (
-                  <div className="autocomplete-item">No matching city found</div>
+                  <div className="autocomplete-no-match">No cities match "{searchText.trim()}"</div>
                 )}
               </div>
             )}
