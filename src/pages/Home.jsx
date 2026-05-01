@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import "./Home.css";
 import cities from "../data/cities.json";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import AQIMap from "../components/AQIMap";
@@ -36,6 +36,26 @@ export default function Home() {
   const [topCities, setTopCities] = useState([]);
   const [markers, setMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const suggestionList = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+    if (!query) return [];
+
+    return cities
+      .map((city) => ({ slug: city, label: formatCityName(city) }))
+      .filter((item) => item.label.toLowerCase().includes(query))
+      .slice(0, 6);
+  }, [searchText]);
+
+  const selectedCitySlug = useMemo(() => {
+    const normalized = searchText.trim().toLowerCase().replace(/\s+/g, "-");
+    return cities.includes(normalized) ? normalized : null;
+  }, [searchText]);
+
+  const canSearch = Boolean(selectedCitySlug);
 
   useEffect(() => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "";
@@ -116,10 +136,53 @@ export default function Home() {
             <span className="badge glass">Live</span>
           </div>
 
-          <div className="search-panel">
-            <input type="search" placeholder="Search any city (e.g. Surat)" disabled />
-            <button disabled>Search</button>
-          </div>
+          <form
+            className="search-panel"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (canSearch) {
+                navigate(`/city/${selectedCitySlug}`);
+                setSuggestionsOpen(false);
+              } else {
+                setSuggestionsOpen(true);
+              }
+            }}
+          >
+            <div className="search-input-wrap">
+              <input
+                type="search"
+                value={searchText}
+                placeholder="Search any city (e.g. Surat)"
+                onChange={(event) => {
+                  setSearchText(event.target.value);
+                  setSuggestionsOpen(true);
+                }}
+                onFocus={() => setSuggestionsOpen(true)}
+                onBlur={() => setTimeout(() => setSuggestionsOpen(false), 120)}
+              />
+              <button type="submit" disabled={!canSearch}>
+                Search
+              </button>
+            </div>
+            {suggestionsOpen && suggestionList.length > 0 && (
+              <div className="autocomplete">
+                {suggestionList.map((item) => (
+                  <button
+                    type="button"
+                    key={item.slug}
+                    className="autocomplete-item"
+                    onMouseDown={() => {
+                      setSearchText(item.label);
+                      setSuggestionsOpen(false);
+                      navigate(`/city/${item.slug}`);
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
 
           <div className="hero-panel-line">
             <div>
