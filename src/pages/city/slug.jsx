@@ -88,7 +88,7 @@ export default function CityPage() {
           <aside className="panel">
             <h3>Health advice</h3>
             <p className="small">{category.description}</p>
-            <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: var(--text) }}>
+            <ul style={{ margin: "16px 0 0", paddingLeft: 18, color: "var(--text)" }}>
               <li>Stay indoors if possible when AQI is unhealthy.</li>
               <li>Use a mask outdoors and avoid high-intensity exercise.</li>
               <li>Keep windows closed on days with high pollution.</li>
