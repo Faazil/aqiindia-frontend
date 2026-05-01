@@ -42,10 +42,16 @@ export default function Home() {
 
   const suggestionList = useMemo(() => {
     const query = searchText.trim().toLowerCase();
+    
     if (!query || query.length < 2) return [];
 
-    return cities
-      .filter((city) => city.toLowerCase().includes(query) || formatCityName(city).toLowerCase().includes(query))
+    const matches = cities.filter((city) => {
+      const citySlug = city.toLowerCase();
+      const cityLabel = formatCityName(city).toLowerCase();
+      return citySlug.startsWith(query) || cityLabel.startsWith(query) || citySlug.includes(query);
+    });
+
+    return matches
       .map((city) => ({ slug: city, label: formatCityName(city) }))
       .slice(0, 8);
   }, [searchText]);
@@ -168,23 +174,29 @@ export default function Home() {
                 Search
               </button>
             </div>
-            {showSuggestions && searchText.trim() && suggestionList.length > 0 && (
+            {showSuggestions && searchText.trim().length >= 2 && (
               <div className="autocomplete">
-                {suggestionList.map((item) => (
-                  <button
-                    type="button"
-                    key={item.slug}
-                    className="autocomplete-item"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      navigate(`/city/${item.slug}`);
-                      setShowSuggestions(false);
-                      setSearchText("");
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                {suggestionList.length > 0 ? (
+                  suggestionList.map((item) => (
+                    <button
+                      type="button"
+                      key={item.slug}
+                      className="autocomplete-item"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        navigate(`/city/${item.slug}`);
+                        setShowSuggestions(false);
+                        setSearchText("");
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))
+                ) : (
+                  <div className="autocomplete-no-result">
+                    No cities found for "{searchText.trim()}"
+                  </div>
+                )}
               </div>
             )}
           </form>
