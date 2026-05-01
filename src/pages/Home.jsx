@@ -50,12 +50,13 @@ export default function Home() {
       .slice(0, 6);
   }, [searchText]);
 
-  const selectedCitySlug = useMemo(() => {
+  const exactMatchSlug = useMemo(() => {
     const normalized = searchText.trim().toLowerCase().replace(/\s+/g, "-");
     return cities.includes(normalized) ? normalized : null;
   }, [searchText]);
 
-  const canSearch = Boolean(selectedCitySlug);
+  const selectedCitySlug = exactMatchSlug || suggestionList[0]?.slug || null;
+  const canSearch = Boolean(selectedCitySlug && searchText.trim());
 
   useEffect(() => {
     if (searchText.trim() && suggestionList.length > 0) {
@@ -169,22 +170,26 @@ export default function Home() {
                 Search
               </button>
             </div>
-            {suggestionsOpen && suggestionList.length > 0 && (
+            {suggestionsOpen && (
               <div className="autocomplete">
-                {suggestionList.map((item) => (
-                  <button
-                    type="button"
-                    key={item.slug}
-                    className="autocomplete-item"
-                    onMouseDown={() => {
-                      setSearchText(item.label);
-                      setSuggestionsOpen(false);
-                      navigate(`/city/${item.slug}`);
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                {suggestionList.length > 0 ? (
+                  suggestionList.map((item) => (
+                    <button
+                      type="button"
+                      key={item.slug}
+                      className="autocomplete-item"
+                      onMouseDown={() => {
+                        setSearchText(item.label);
+                        setSuggestionsOpen(false);
+                        navigate(`/city/${item.slug}`);
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))
+                ) : (
+                  <div className="autocomplete-item">No matching city found</div>
+                )}
               </div>
             )}
           </form>
