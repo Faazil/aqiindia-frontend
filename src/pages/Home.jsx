@@ -59,69 +59,102 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  const stats = useMemo(() => {
+  const worstCities = useMemo(() => topCities.slice(0, 5), [topCities]);
+
+  const bestCities = useMemo(
+    () => [...topCities].sort((a, b) => (a.aqi || 0) - (b.aqi || 0)).slice(0, 5),
+    [topCities]
+  );
+
+  const summary = useMemo(() => {
     const values = topCities.map((city) => Number(city.aqi)).filter((aqi) => !Number.isNaN(aqi));
     const average = values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
     const worst = topCities[0] || null;
-    const categoryCounts = values.reduce(
-      (counts, aqi) => {
-        if (aqi <= 100) counts.good += 1;
-        else if (aqi <= 200) counts.moderate += 1;
-        else if (aqi <= 300) counts.unhealthy += 1;
-        else counts.veryUnhealthy += 1;
-        return counts;
-      },
-      { good: 0, moderate: 0, unhealthy: 0, veryUnhealthy: 0 }
-    );
-
     return {
       total: topCities.length,
       average,
       worst,
-      categoryCounts,
+      updatedLabel: loading ? "Loading..." : "Live now",
     };
-  }, [topCities]);
+  }, [topCities, loading]);
 
   return (
     <div className="container">
-      <header>
-        <h1>AQI India — Live Air Quality Dashboard</h1>
-        <p>Track current air pollution in India's major cities with cleaner layouts, clearer color cues, and faster data insight.</p>
+      <header className="hero">
+        <div className="hero-copy fade-up">
+          <span className="eyebrow">Live AQI India</span>
+          <h1>India’s air quality, clearer and faster.</h1>
+          <p className="hero-text">
+            A modern dashboard for real-time AQI, city rankings, and health guidance across Indian cities.
+          </p>
+
+          <div className="hero-stats">
+            <div className="hero-card">
+              <span>National Avg AQI</span>
+              <strong>{summary.average ?? "—"}</strong>
+              <p className="small">Current average of reported cities.</p>
+            </div>
+            <div className="hero-card">
+              <span>Tracking</span>
+              <strong>{summary.total}</strong>
+              <p className="small">Live city reports included.</p>
+            </div>
+            <div className="hero-card">
+              <span>Worst AQI</span>
+              <strong>{summary.worst?.aqi ?? "—"}</strong>
+              <p className="small">{summary.worst?.city ?? "Data updating"}</p>
+            </div>
+          </div>
+        </div>
+
+        <aside className="hero-panel fade-up">
+          <div className="panel-top">
+            <div>
+              <h2>Dashboard highlights</h2>
+              <p className="small">Keep a quick pulse on the worst, the best, and the latest air quality trends.</p>
+            </div>
+            <span className="badge glass">Live</span>
+          </div>
+
+          <div className="search-panel">
+            <input type="search" placeholder="Search any city (e.g. Surat)" disabled />
+            <button disabled>Search</button>
+          </div>
+
+          <div className="hero-panel-line">
+            <div>
+              <p className="small">Updated</p>
+              <strong>{summary.updatedLabel}</strong>
+            </div>
+            <div>
+              <p className="small">Cities tracked</p>
+              <strong>{summary.total}</strong>
+            </div>
+          </div>
+
+          <p className="small note">Search will be enabled once city lookup is connected to live data.</p>
+        </aside>
       </header>
 
-      <main>
-        <section className="card-grid">
-          <article className="stat-card">
-            <h3>Tracked cities</h3>
-            <strong>{cities.length}</strong>
-            <span>Available for city reports</span>
-          </article>
-          <article className="stat-card">
-            <h3>Worst AQI right now</h3>
-            <strong>{stats.worst?.aqi ?? "—"}</strong>
-            <span>{stats.worst?.city ?? "Data loading"}</span>
-          </article>
-          <article className="stat-card">
-            <h3>Average AQI</h3>
-            <strong>{stats.average ?? "—"}</strong>
-            <span>Among top reported cities</span>
-          </article>
-        </section>
+      <section className="grid-two">
+        <div className="glass-card fade-up">
+          <div className="section-head">
+            <div>
+              <h2>City rankings</h2>
+              <p className="small">Worst and best AQI across the current city dataset.</p>
+            </div>
+          </div>
 
-        <section className="map-card">
-          <AQIMap markers={markers} />
-        </section>
-
-        <section className="grid-two">
-          <div className="card">
-            <div className="top-list">
-              <h2>Top 10 worst cities (latest)</h2>
-              {loading ? (
-                <p>Loading latest air quality data…</p>
-              ) : (
-                <ul>
-                  {topCities.length === 0 && <li>No data yet — will populate soon.</li>}
-                  {topCities.map((city) => {
+          <div className="list-row">
+            <div className="list-block">
+              <h3>Worst AQI (Top 5)</h3>
+              <ul className="top-list">
+                {loading ? (
+                  <li>Loading top cities…</li>
+                ) : worstCities.length === 0 ? (
+                  <li>No data available yet.</li>
+                ) : (
+                  worstCities.map((city) => {
                     const category = getAqiCategory(city.aqi);
                     return (
                       <li key={city.city}>
@@ -132,65 +165,72 @@ export default function Home() {
                         <strong>{city.aqi ?? "N/A"}</strong>
                       </li>
                     );
-                  })}
-                </ul>
-              )}
+                  })
+                )}
+              </ul>
             </div>
 
-            <div style={{ marginTop: 24 }}>
-              <h3>City trends</h3>
-              <AQIChart data={[]} />
-              <p className="small" style={{ marginTop: 10 }}>
-                Data sources: CPCB, OpenAQ. Use this information for guidance only.
-              </p>
+            <div className="list-block">
+              <h3>Best AQI (Top 5)</h3>
+              <ul className="top-list">
+                {loading ? (
+                  <li>Loading best cities…</li>
+                ) : bestCities.length === 0 ? (
+                  <li>No data available yet.</li>
+                ) : (
+                  bestCities.map((city) => {
+                    const category = getAqiCategory(city.aqi);
+                    return (
+                      <li key={city.city}>
+                        <div>
+                          <Link to={`/city/${city.city.toLowerCase()}`}>{city.city}</Link>
+                          <span className={`badge ${category.style}`}>{category.label}</span>
+                        </div>
+                        <strong>{city.aqi ?? "N/A"}</strong>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
             </div>
           </div>
+        </div>
 
-          <aside>
-            <div className="panel">
-              <h3>Air quality at a glance</h3>
-              <div className="stats-grid">
-                <div className="info-card">
-                  <strong>{stats.categoryCounts.good}</strong>
-                  <span>Good / Moderate cities</span>
-                </div>
-                <div className="info-card">
-                  <strong>{stats.categoryCounts.unhealthy}</strong>
-                  <span>Unhealthy cities</span>
-                </div>
-                <div className="info-card">
-                  <strong>{stats.categoryCounts.veryUnhealthy}</strong>
-                  <span>Very unhealthy cities</span>
-                </div>
-              </div>
+        <section className="map-card fade-up">
+          <div className="map-header">
+            <div>
+              <h2>India AQI map</h2>
+              <p className="small">Tap city markers to see live AQI values.</p>
             </div>
-
-            <div className="panel">
-              <h3>Health advice</h3>
-              <p className="small">
-                If the current AQI is above 150, limit outdoor exposure, wear an N95 mask if you need to go outside, and keep indoor air clean.
-              </p>
-            </div>
-          </aside>
-        </section>
-
-        <section className="card">
-          <h2>All cities</h2>
-          <div className="city-grid">
-            {cities.map((city) => (
-              <Link key={city} to={`/city/${city}`} className="city-card">
-                {formatCityName(city)}
-              </Link>
-            ))}
           </div>
+          <AQIMap markers={markers} />
         </section>
-      </main>
+      </section>
 
-      <footer>
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
+      <section className="fade-up">
+        <div className="section-head">
+          <div>
+            <h2>City dashboard</h2>
+            <p className="small">Browse all tracked cities and open a report page for each.</p>
+          </div>
+        </div>
+
+        <div className="city-grid">
+          {cities.map((city) => (
+            <Link key={city} to={`/city/${city}`} className="city-card">
+              {formatCityName(city)}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <footer className="site-footer">
+        <span>Live AQI India © 2026</span>
+        <div>
+          <a href="/about">About AQI</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms</a>
+        </div>
       </footer>
     </div>
   );
