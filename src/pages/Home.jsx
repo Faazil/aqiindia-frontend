@@ -37,41 +37,27 @@ export default function Home() {
   const [markers, setMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
 
   const suggestionList = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     if (!query || query.length < 2) return [];
 
-    const filtered = cities
-      .filter((city) => {
-        const cityLower = city.toLowerCase();
-        const labelLower = formatCityName(city).toLowerCase();
-        return cityLower.includes(query) || labelLower.includes(query);
-      })
+    return cities
+      .filter((city) => city.toLowerCase().includes(query) || formatCityName(city).toLowerCase().includes(query))
       .map((city) => ({ slug: city, label: formatCityName(city) }))
       .slice(0, 8);
-
-    return filtered;
   }, [searchText]);
 
   const selectedCitySlug = useMemo(() => {
     if (!searchText.trim()) return null;
-    const query = searchText.trim().toLowerCase().replace(/\s+/g, "-");
-    if (cities.includes(query)) return query;
+    const normalized = searchText.trim().toLowerCase().replace(/\s+/g, "-");
+    if (cities.includes(normalized)) return normalized;
     return suggestionList[0]?.slug || null;
   }, [searchText, suggestionList]);
 
   const canSearch = Boolean(selectedCitySlug && searchText.trim());
-
-  useEffect(() => {
-    if (searchText.trim() && suggestionList.length > 0) {
-      setSuggestionsOpen(true);
-    } else {
-      setSuggestionsOpen(false);
-    }
-  }, [searchText, suggestionList]);
 
   useEffect(() => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "";
@@ -158,7 +144,7 @@ export default function Home() {
               event.preventDefault();
               if (canSearch) {
                 navigate(`/city/${selectedCitySlug}`);
-                setSuggestionsOpen(false);
+                setShowSuggestions(false);
               }
             }}
           >
@@ -169,35 +155,36 @@ export default function Home() {
                 placeholder="Search any city (e.g. Surat)"
                 onChange={(event) => {
                   setSearchText(event.target.value);
-                  setSuggestionsOpen(true);
+                  setShowSuggestions(true);
                 }}
-                onFocus={() => setSuggestionsOpen(Boolean(searchText.trim()))}
-                onBlur={() => setTimeout(() => setSuggestionsOpen(false), 120)}
+                onFocus={() => {
+                  if (searchText.trim()) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               />
               <button type="submit" disabled={!canSearch}>
                 Search
               </button>
             </div>
-            {suggestionsOpen && searchText.trim() && (
+            {showSuggestions && searchText.trim() && suggestionList.length > 0 && (
               <div className="autocomplete">
-                {suggestionList.length > 0 ? (
-                  suggestionList.map((item) => (
-                    <button
-                      type="button"
-                      key={item.slug}
-                      className="autocomplete-item"
-                      onMouseDown={() => {
-                        setSearchText(item.label);
-                        setSuggestionsOpen(false);
-                        navigate(`/city/${item.slug}`);
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ))
-                ) : (
-                  <div className="autocomplete-no-match">No cities match "{searchText.trim()}"</div>
-                )}
+                {suggestionList.map((item) => (
+                  <button
+                    type="button"
+                    key={item.slug}
+                    className="autocomplete-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      navigate(`/city/${item.slug}`);
+                      setShowSuggestions(false);
+                      setSearchText("");
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             )}
           </form>
