@@ -72,6 +72,19 @@ export default function Home() {
   useEffect(() => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "";
     
+    // Track visitor
+    axios
+      .post(`${apiBase}/api/visitors/count`)
+      .then((response) => {
+        setVisitors({
+          total: response.data.total || 0,
+          today: response.data.today || 0
+        });
+      })
+      .catch(() => {
+        setVisitors({ total: 0, today: 0 });
+      });
+    
     // Fetch top cities data
     axios
       .get(`${apiBase}/api/top-cities`)
@@ -104,19 +117,6 @@ export default function Home() {
       .catch(() => {
         // Fallback to static cities if API fails
         setAllCities(cities.map(city => ({ city, aqi: null })));
-      });
-
-    // Fetch visitor count
-    axios
-      .get(`${apiBase}/api/visitors/count`)
-      .then((response) => {
-        setVisitors({
-          total: response.data.total || 0,
-          today: response.data.today || 0
-        });
-      })
-      .catch(() => {
-        setVisitors({ total: 0, today: 0 });
       });
   }, []);
 
