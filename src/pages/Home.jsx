@@ -45,7 +45,7 @@ export default function Home() {
   const suggestionList = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     
-    if (!query || query.length < 2) return [];
+    if (!query || query.length < 1) return [];
 
     const cityList = allCities.length > 0 ? allCities.map(c => c.city) : cities;
     const matches = cityList.filter((city) => {
@@ -131,13 +131,14 @@ export default function Home() {
     const values = topCities.map((city) => Number(city.aqi)).filter((aqi) => !Number.isNaN(aqi));
     const average = values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
     const worst = topCities[0] || null;
+    const totalCities = allCities.length > 0 ? allCities.length : topCities.length;
     return {
-      total: topCities.length,
+      total: totalCities,
       average,
       worst,
       updatedLabel: loading ? "Loading..." : "Live now",
     };
-  }, [topCities, loading]);
+  }, [topCities, loading, allCities]);
 
   return (
     <div className="container">
@@ -218,7 +219,7 @@ export default function Home() {
                 Search
               </button>
             </div>
-            {showSuggestions && searchText.trim().length >= 2 && (
+            {showSuggestions && searchText.trim().length >= 1 && (
               <div className="autocomplete">
                 {suggestionList.length > 0 ? (
                   suggestionList.map((item) => (

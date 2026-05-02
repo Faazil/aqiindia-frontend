@@ -4,52 +4,56 @@ export default async function handler(req, res) {
   try {
     const apiKey = process.env.OPENAQ_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "OPENAQ_KEY not configured" });
+      // Return all cities from JSON with null AQI if API key not configured
+      const citiesData = cities.map(city => ({ city, aqi: null }));
+      return res.status(200).json({
+        total: citiesData.length,
+        cities: citiesData,
+        lastUpdated: new Date().toISOString()
+      });
     }
 
-    // Fetch AQI data for all Indian cities in batches
-    const cityChunks = [];
-    for (let i = 0; i < cities.length; i += 10) {
-      cityChunks.push(cities.slice(i, i + 10));
-    }
+    // Fetch all AQI data from OpenAQ for India
+    const response = await fetch('https://api.openaq.org/v3/latest?country=IN&limit=10000', {
+      headers: { "X-API-Key": apiKey }
+    });
 
-    const allCityData = [];
+    const data = await response.json();
+    const results = data.results || [];
 
-    for (const chunk of cityChunks) {
-      const promises = chunk.map(city =>
-        fetch(`https://api.openaq.org/v3/latest?country=IN&city=${encodeURIComponent(city)}&limit=1`, {
-          headers: { "X-API-Key": apiKey }
-        })
-          .then(r => r.json())
-          .then(data => {
-            const result = data.results?.[0];
-            if (result) {
-              return {
-                city: city,
-                aqi: result.aqi,
-                pm25: result.pm25,
-                coordinates: result.coordinates,
-                updatedAt: result.date?.utc
-              };
-            }
-            return { city: city, aqi: null };
-          })
-          .catch(() => ({ city: city, aqi: null }))
-      );
+    // Convert to city objects
+    const cityMap = new Map();
+    results.forEach(result => {
+      const cityName = result.city?.toLowerCase();
+      if (cityName && !cityMap.has(cityName)) {
+        cityMap.set(cityName, {
+          city: cityName,
+          aqi: result.aqi || null,
+          pm25: result.pm25 || null,
+          coordinates: result.coordinates || null,
+          updatedAt: result.date?.utc || null
+        });
+      }
+    });
 
-      const results = await Promise.all(promises);
-      allCityData.push(...results);
-    }
+    // Convert map to array
+    const allCitiesData = Array.from(cityMap.values());
 
-    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
+    res.setHeader('Cache-Control', 'public, max-age=300');
     return res.status(200).json({
-      total: allCityData.length,
-      cities: allCityData,
+      total: allCitiesData.length,
+      cities: allCitiesData,
       lastUpdated: new Date().toISOString()
     });
 
   } catch (err) {
     console.error("Cities API error:", err);
-    return res.status(500).json({ error: "Failed to fetch cities data" });
+    // Fallback to static cities
+    const citiesData = cities.map(city => ({ city, aqi: null }));
+    return res.status(200).json({
+      total: citiesData.length,
+      cities: citiesData,
+      lastUpdated: new Date().toISOString()
+    });
   }
 }
