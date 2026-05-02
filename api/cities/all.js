@@ -1,4 +1,4 @@
-import cities from '../../src/data/cities.json' assert { type: 'json' };
+import cities from '../../src/data/cities.json' with { type: 'json' };
 
 export default async function handler(req, res) {
   try {
