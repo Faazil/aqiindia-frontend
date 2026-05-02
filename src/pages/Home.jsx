@@ -34,10 +34,12 @@ function formatCityName(city) {
 
 export default function Home() {
   const [topCities, setTopCities] = useState([]);
+  const [allCities, setAllCities] = useState([]);
   const [markers, setMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [visitors, setVisitors] = useState({ total: 0, today: 0 });
   const navigate = useNavigate();
 
   const suggestionList = useMemo(() => {
@@ -45,7 +47,8 @@ export default function Home() {
     
     if (!query || query.length < 2) return [];
 
-    const matches = cities.filter((city) => {
+    const cityList = allCities.length > 0 ? allCities.map(c => c.city) : cities;
+    const matches = cityList.filter((city) => {
       const citySlug = city.toLowerCase();
       const cityLabel = formatCityName(city).toLowerCase();
       return citySlug.startsWith(query) || cityLabel.startsWith(query) || citySlug.includes(query);
@@ -54,19 +57,22 @@ export default function Home() {
     return matches
       .map((city) => ({ slug: city, label: formatCityName(city) }))
       .slice(0, 8);
-  }, [searchText]);
+  }, [searchText, allCities]);
 
   const selectedCitySlug = useMemo(() => {
     if (!searchText.trim()) return null;
     const normalized = searchText.trim().toLowerCase().replace(/\s+/g, "-");
-    if (cities.includes(normalized)) return normalized;
+    const cityList = allCities.length > 0 ? allCities.map(c => c.city) : cities;
+    if (cityList.includes(normalized)) return normalized;
     return suggestionList[0]?.slug || null;
-  }, [searchText, suggestionList]);
+  }, [searchText, suggestionList, allCities]);
 
   const canSearch = Boolean(selectedCitySlug && searchText.trim());
 
   useEffect(() => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+    
+    // Fetch top cities data
     axios
       .get(`${apiBase}/api/top-cities`)
       .then((response) => {
@@ -85,6 +91,33 @@ export default function Home() {
         setMarkers([]);
       })
       .finally(() => setLoading(false));
+
+    // Fetch all cities data for city grid
+    axios
+      .get(`${apiBase}/api/cities/all`)
+      .then((response) => {
+        const data = response.data || {};
+        if (data.cities) {
+          setAllCities(data.cities);
+        }
+      })
+      .catch(() => {
+        // Fallback to static cities if API fails
+        setAllCities(cities.map(city => ({ city, aqi: null })));
+      });
+
+    // Fetch visitor count
+    axios
+      .get(`${apiBase}/api/visitors/count`)
+      .then((response) => {
+        setVisitors({
+          total: response.data.total || 0,
+          today: response.data.today || 0
+        });
+      })
+      .catch(() => {
+        setVisitors({ total: 0, today: 0 });
+      });
   }, []);
 
   const worstCities = useMemo(() => topCities.slice(0, 5), [topCities]);
@@ -142,6 +175,17 @@ export default function Home() {
               <p className="small">Keep a quick pulse on the worst, the best, and the latest air quality trends.</p>
             </div>
             <span className="badge glass">Live</span>
+          </div>
+
+          <div className="visitor-stats">
+            <div className="visitor-item">
+              <span className="visitor-label">Total Visitors</span>
+              <strong className="visitor-count">{visitors.total.toLocaleString()}</strong>
+            </div>
+            <div className="visitor-item">
+              <span className="visitor-label">Today</span>
+              <strong className="visitor-count">{visitors.today.toLocaleString()}</strong>
+            </div>
           </div>
 
           <form
@@ -296,11 +340,31 @@ export default function Home() {
         </div>
 
         <div className="city-grid">
-          {cities.map((city) => (
-            <Link key={city} to={`/city/${city}`} className="city-card">
-              {formatCityName(city)}
-            </Link>
-          ))}
+          {allCities.length > 0 
+            ? allCities.map((cityData) => {
+                const category = getAqiCategory(cityData.aqi);
+                return (
+                  <Link key={cityData.city} to={`/city/${cityData.city}`} className={`city-card ${category.style}`}>
+                    <div className="city-card-content">
+                      <span className="city-name">{formatCityName(cityData.city)}</span>
+                      {cityData.aqi !== null ? (
+                        <div className="city-aqi">
+                          <strong>{cityData.aqi}</strong>
+                          <span className={`badge ${category.style}`}>{category.label}</span>
+                        </div>
+                      ) : (
+                        <span className="city-aqi">No data</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })
+            : cities.map((city) => (
+                <Link key={city} to={`/city/${city}`} className="city-card">
+                  {formatCityName(city)}
+                </Link>
+              ))
+          }
         </div>
       </section>
 
