@@ -32,6 +32,17 @@ function formatCityName(city) {
   return city.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+const TREND_DATA = [
+  { ts: "06:00", pm25: 72, pm10: 118 },
+  { ts: "08:00", pm25: 88, pm10: 132 },
+  { ts: "10:00", pm25: 105, pm10: 146 },
+  { ts: "12:00", pm25: 125, pm10: 158 },
+  { ts: "14:00", pm25: 138, pm10: 172 },
+  { ts: "16:00", pm25: 129, pm10: 161 },
+  { ts: "18:00", pm25: 118, pm10: 149 },
+  { ts: "20:00", pm25: 104, pm10: 132 }
+];
+
 export default function Home() {
   const [topCities, setTopCities] = useState([]);
   const [allCities, setAllCities] = useState([]);
@@ -286,7 +297,7 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="small note">Search will be enabled once city lookup is connected to live data.</p>
+          <p className="small note">Live mock data is shown for local preview. City search and report pages are active.</p>
         </aside>
       </header>
 
@@ -359,6 +370,39 @@ export default function Home() {
           </div>
           <AQIMap markers={markers} />
         </section>
+      </section>
+
+      <section className="glass-card fade-up insight-section">
+        <div className="section-head">
+          <div>
+            <h2>Real-time air quality insights</h2>
+            <p className="small">Track hourly pollutant trends and see how city air quality has evolved through the day.</p>
+          </div>
+        </div>
+
+        <div className="insight-grid">
+          <div className="insight-panel">
+            <h3>Healthy air alert</h3>
+            <p>Delhi and Kolkata are currently in the unhealthy range. Take extra care if you live in these cities.</p>
+            <ul>
+              <li>Wear an N95 mask when outdoors.</li>
+              <li>Avoid long outdoor exercises during peak hours.</li>
+              <li>Keep indoor air purifiers running if available.</li>
+            </ul>
+          </div>
+
+          <div className="chart-container">
+            <div className="chart-panel">
+              <div className="chart-header">
+                <div>
+                  <p className="small">Hourly pollutant trend</p>
+                  <h3>PM2.5 & PM10 over the last 12 hours</h3>
+                </div>
+              </div>
+              <AQIChart data={TREND_DATA} />
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="fade-up">

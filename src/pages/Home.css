@@ -389,7 +389,8 @@
 }
 
 .fade-up {
-  animation: slideUp 0.6s ease forwards
+  animation: slideUp 0.6s ease forwards;
+}
 
 .list-block ul.top-list {
   padding-left: 0;
