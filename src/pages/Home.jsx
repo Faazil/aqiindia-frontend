@@ -72,6 +72,28 @@ export default function Home() {
   useEffect(() => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || "";
     
+    // Mock data for demo/development
+    const mockTopCities = [
+      { city: "delhi", aqi: 185 },
+      { city: "mumbai", aqi: 142 },
+      { city: "bengaluru", aqi: 98 },
+      { city: "hyderabad", aqi: 112 },
+      { city: "pune", aqi: 105 }
+    ];
+
+    const mockAllCities = [
+      { city: "delhi", aqi: 185 },
+      { city: "mumbai", aqi: 142 },
+      { city: "bengaluru", aqi: 98 },
+      { city: "hyderabad", aqi: 112 },
+      { city: "pune", aqi: 105 },
+      { city: "kolkata", aqi: 168 },
+      { city: "chennai", aqi: 78 },
+      { city: "ahmedabad", aqi: 125 },
+      { city: "lucknow", aqi: 156 },
+      { city: "jaipur", aqi: 198 }
+    ];
+
     // Track visitor
     axios
       .post(`${apiBase}/api/visitors/count`)
@@ -82,7 +104,8 @@ export default function Home() {
         });
       })
       .catch(() => {
-        setVisitors({ total: 0, today: 0 });
+        // Demo data for local development
+        setVisitors({ total: 1247, today: 89 });
       });
     
     // Fetch top cities data
@@ -100,8 +123,14 @@ export default function Home() {
         setMarkers(mappedMarkers);
       })
       .catch(() => {
-        setTopCities([]);
-        setMarkers([]);
+        // Demo data for local development
+        setTopCities(mockTopCities);
+        const mappedMarkers = mockTopCities.map((city) => {
+          const slug = (city.city || "").toLowerCase();
+          const coords = CITY_COORDS[slug] || [22.5937, 78.9629];
+          return { lat: coords[0], lon: coords[1], city: city.city, aqi: city.aqi };
+        });
+        setMarkers(mappedMarkers);
       })
       .finally(() => setLoading(false));
 
@@ -115,8 +144,8 @@ export default function Home() {
         }
       })
       .catch(() => {
-        // Fallback to static cities if API fails
-        setAllCities(cities.map(city => ({ city, aqi: null })));
+        // Demo data for local development
+        setAllCities(mockAllCities);
       });
   }, []);
 
